@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Icon from "@/components/ui/icon";
 
 interface NavItem {
@@ -33,12 +33,16 @@ const useTheme = () => {
   const [theme, setTheme] = useState<Theme>(() => {
     return (localStorage.getItem("theme") as Theme) ?? "system";
   });
+  const [systemIsDark, setSystemIsDark] = useState<boolean>(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+  );
 
   useEffect(() => {
     const root = document.documentElement;
     const apply = (t: Theme) => {
       if (t === "system") {
         const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        setSystemIsDark(prefersDark);
         root.classList.toggle("dark", prefersDark);
       } else {
         root.classList.toggle("dark", t === "dark");
@@ -47,15 +51,16 @@ const useTheme = () => {
     apply(theme);
     localStorage.setItem("theme", theme);
 
-    if (theme === "system") {
-      const mq = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => apply("system");
-      mq.addEventListener("change", handler);
-      return () => mq.removeEventListener("change", handler);
-    }
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => {
+      setSystemIsDark(mq.matches);
+      if (theme === "system") apply("system");
+    };
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, [theme]);
 
-  return { theme, setTheme };
+  return { theme, setTheme, systemIsDark };
 };
 
 interface SidebarProps {
@@ -66,7 +71,19 @@ interface SidebarProps {
 const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
   const [expanded, setExpanded] = useState(true);
   const [active, setActive] = useState(activeItem);
-  const { theme, setTheme } = useTheme();
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const themeRef = useRef<HTMLDivElement>(null);
+  const { theme, setTheme, systemIsDark } = useTheme();
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (themeRef.current && !themeRef.current.contains(e.target as Node)) {
+        setThemeMenuOpen(false);
+      }
+    };
+    if (themeMenuOpen) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [themeMenuOpen]);
 
   const handleClick = (label: string) => {
     setActive(label);
@@ -94,10 +111,12 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
   );
 
   const themes: { value: Theme; icon: string; label: string }[] = [
-    { value: "light", icon: "Sun", label: "Light" },
-    { value: "dark", icon: "Moon", label: "Dark" },
+    { value: "light", icon: "Sun", label: "Light Mode" },
+    { value: "dark", icon: "Moon", label: "Dark Mode" },
     { value: "system", icon: "Monitor", label: "System" },
   ];
+
+  const currentTheme = themes.find((t) => t.value === theme)!;
 
   return (
     <aside
@@ -143,45 +162,62 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
       </div>
 
       {/* THEME SWITCHER */}
-      <div className="border-t border-border px-2 py-3">
-        {expanded ? (
-          <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
-            {themes.map(({ value, icon, label }) => (
-              <button
-                key={value}
-                onClick={() => setTheme(value)}
-                title={label}
-                className={`
-                  flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-inter font-medium transition-all
-                  ${theme === value
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                  }
-                `}
-              >
-                <Icon name={icon as "Sun"} size={13} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1">
-            {themes.map(({ value, icon, label }) => (
-              <button
-                key={value}
-                onClick={() => setTheme(value)}
-                title={label}
-                className={`
-                  w-8 h-8 flex items-center justify-center rounded-md transition-colors
-                  ${theme === value
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  }
-                `}
-              >
-                <Icon name={icon as "Sun"} size={15} />
-              </button>
-            ))}
+      <div className="border-t border-border px-2 py-2 relative" ref={themeRef}>
+        <button
+          onClick={() => setThemeMenuOpen((v) => !v)}
+          title={currentTheme.label}
+          className={`
+            w-full flex items-center gap-3 rounded-lg transition-all duration-150
+            ${expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"}
+            ${themeMenuOpen
+              ? "bg-secondary text-foreground"
+              : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+            }
+          `}
+        >
+          <Icon name={currentTheme.icon as "Sun"} size={18} className="shrink-0" />
+          {expanded && (
+            <span className="font-inter text-sm font-medium truncate flex-1 text-left">
+              {currentTheme.label}
+            </span>
+          )}
+        </button>
+
+        {themeMenuOpen && (
+          <div
+            className={`
+              absolute bottom-2 z-50 min-w-[200px] py-1.5
+              bg-popover text-popover-foreground border border-border rounded-lg shadow-lg
+              ${expanded ? "left-[calc(100%+8px)]" : "left-[calc(100%+8px)]"}
+            `}
+          >
+            {themes.map(({ value, icon, label }) => {
+              const isActive = theme === value;
+              const showSystemHint = value === "system";
+              return (
+                <button
+                  key={value}
+                  onClick={() => {
+                    setTheme(value);
+                    setThemeMenuOpen(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary/70 transition-colors text-left"
+                >
+                  <Icon name={icon as "Sun"} size={16} className="shrink-0 text-muted-foreground" />
+                  <span className="font-inter text-sm font-medium flex-1">
+                    {label}
+                    {showSystemHint && (
+                      <span className="text-muted-foreground font-normal ml-1.5">
+                        ({systemIsDark ? "Dark" : "Light"})
+                      </span>
+                    )}
+                  </span>
+                  {isActive && (
+                    <Icon name="Check" size={15} className="text-primary shrink-0" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
