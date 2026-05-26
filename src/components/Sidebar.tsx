@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 
 interface NavItem {
@@ -27,6 +27,37 @@ const systemNav: NavItem[] = [
   { icon: "HelpCircle", label: "Help" },
 ];
 
+type Theme = "light" | "dark" | "system";
+
+const useTheme = () => {
+  const [theme, setTheme] = useState<Theme>(() => {
+    return (localStorage.getItem("theme") as Theme) ?? "system";
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const apply = (t: Theme) => {
+      if (t === "system") {
+        const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        root.classList.toggle("dark", prefersDark);
+      } else {
+        root.classList.toggle("dark", t === "dark");
+      }
+    };
+    apply(theme);
+    localStorage.setItem("theme", theme);
+
+    if (theme === "system") {
+      const mq = window.matchMedia("(prefers-color-scheme: dark)");
+      const handler = () => apply("system");
+      mq.addEventListener("change", handler);
+      return () => mq.removeEventListener("change", handler);
+    }
+  }, [theme]);
+
+  return { theme, setTheme };
+};
+
 interface SidebarProps {
   activeItem?: string;
   onItemClick?: (label: string) => void;
@@ -35,6 +66,7 @@ interface SidebarProps {
 const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
   const [expanded, setExpanded] = useState(true);
   const [active, setActive] = useState(activeItem);
+  const { theme, setTheme } = useTheme();
 
   const handleClick = (label: string) => {
     setActive(label);
@@ -60,6 +92,12 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
       )}
     </button>
   );
+
+  const themes: { value: Theme; icon: string; label: string }[] = [
+    { value: "light", icon: "Sun", label: "Light" },
+    { value: "dark", icon: "Moon", label: "Dark" },
+    { value: "system", icon: "Monitor", label: "System" },
+  ];
 
   return (
     <aside
@@ -102,6 +140,50 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
         {systemNav.map((item) => (
           <NavRow key={item.label} item={item} />
         ))}
+      </div>
+
+      {/* THEME SWITCHER */}
+      <div className="border-t border-border px-2 py-3">
+        {expanded ? (
+          <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
+            {themes.map(({ value, icon, label }) => (
+              <button
+                key={value}
+                onClick={() => setTheme(value)}
+                title={label}
+                className={`
+                  flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-inter font-medium transition-all
+                  ${theme === value
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                <Icon name={icon as "Sun"} size={13} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1">
+            {themes.map(({ value, icon, label }) => (
+              <button
+                key={value}
+                onClick={() => setTheme(value)}
+                title={label}
+                className={`
+                  w-8 h-8 flex items-center justify-center rounded-md transition-colors
+                  ${theme === value
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  }
+                `}
+              >
+                <Icon name={icon as "Sun"} size={15} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* USER */}
