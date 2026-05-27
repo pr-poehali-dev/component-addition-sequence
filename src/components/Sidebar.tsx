@@ -133,9 +133,19 @@ interface SidebarProps {
   onItemClick?: (label: string) => void;
 }
 
+const SIDEBAR_STORAGE_KEY = "sidebar:expanded";
+
 const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) => {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    return stored === null ? true : stored === "true";
+  });
   const [active, setActive] = useState(activeItem);
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, String(expanded));
+  }, [expanded]);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
   const [popoverTop, setPopoverTop] = useState<number>(0);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
