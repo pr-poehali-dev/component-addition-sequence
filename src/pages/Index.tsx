@@ -2,6 +2,7 @@ import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
 import TopBar from "@/components/TopBar";
 import Icon from "@/components/ui/icon";
+import GameCompass from "@/components/GameCompass";
 
 const HomePage = () => (
   <div>
@@ -79,7 +80,10 @@ const placeholderPage = (title: string) => (
 const Index = () => {
   const [activePage, setActivePage] = useState("Главная");
 
-  const content = activePage === "Главная" ? <HomePage /> : placeholderPage(activePage);
+  const content =
+    activePage === "Главная" ? <HomePage />
+    : activePage === "Игровой компас" ? <GameCompass />
+    : placeholderPage(activePage);
 
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
