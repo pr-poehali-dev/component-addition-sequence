@@ -160,6 +160,7 @@ const GameCompass = () => {
     mood: [],
     mode: [],
   });
+  const [columns, setColumns] = useState<1 | 2 | 3>(1);
 
   const toggleTag = (cat: TagCategory, tag: string) => {
     setSelected((prev) => ({
@@ -244,22 +245,45 @@ const GameCompass = () => {
         ))}
       </div>
 
-      <div className="flex items-center justify-between mb-5 pb-4 border-b border-border">
+      <div className="flex items-center justify-between mb-5 pb-4 border-b border-border gap-4">
         <div className="font-inter text-sm text-muted-foreground">
           Найдено: <span className="text-foreground font-semibold">{filtered.length}</span>
           {allSelected.length > 0 && (
             <span className="ml-2 text-xs">• выбрано тегов: {allSelected.length}</span>
           )}
         </div>
-        {allSelected.length > 0 && (
-          <button
-            onClick={clearAll}
-            className="inline-flex items-center gap-1.5 text-xs font-inter text-muted-foreground hover:text-foreground"
-          >
-            <Icon name="X" size={12} />
-            Сбросить
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1 p-0.5 rounded-md border border-border bg-card">
+            {([1, 2, 3] as const).map((n) => (
+              <button
+                key={n}
+                onClick={() => setColumns(n)}
+                title={`${n} в ряд`}
+                className={`
+                  flex items-center justify-center w-7 h-7 rounded transition-colors
+                  ${columns === n
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                  }
+                `}
+              >
+                <Icon
+                  name={n === 1 ? "Rows3" : n === 2 ? "Columns2" : "LayoutGrid"}
+                  size={14}
+                />
+              </button>
+            ))}
+          </div>
+          {allSelected.length > 0 && (
+            <button
+              onClick={clearAll}
+              className="inline-flex items-center gap-1.5 text-xs font-inter text-muted-foreground hover:text-foreground"
+            >
+              <Icon name="X" size={12} />
+              Сбросить
+            </button>
+          )}
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -271,14 +295,22 @@ const GameCompass = () => {
           <p className="font-inter text-sm text-muted-foreground">Попробуй убрать часть тегов.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-3">
+        <div
+          className={`grid gap-3 ${
+            columns === 1
+              ? "grid-cols-1"
+              : columns === 2
+              ? "grid-cols-1 md:grid-cols-2"
+              : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          }`}
+        >
           {filtered.map((game, i) => (
             <GameCard
               key={game.title}
               game={game}
               rank={i}
               match={matchFor(i)}
-              featured={i === 0}
+              featured={i === 0 && columns === 1}
             />
           ))}
         </div>
