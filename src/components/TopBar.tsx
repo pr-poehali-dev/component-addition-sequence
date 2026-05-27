@@ -70,7 +70,7 @@ const TopBar = ({ onItemClick }: TopBarProps) => {
   return (
     <div
       ref={wrapperRef}
-      className="fixed top-4 right-4 z-40 flex items-center gap-1 px-2 py-1.5 bg-card border border-border rounded-full"
+      className="fixed top-4 right-4 z-40 flex items-center gap-1 px-2 py-1.5"
     >
       <div className="flex items-center">
         <input
