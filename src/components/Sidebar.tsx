@@ -4,27 +4,64 @@ import Icon from "@/components/ui/icon";
 interface NavItem {
   icon: string;
   label: string;
+  children?: { label: string }[];
 }
 
-const mainNav: NavItem[] = [
-  { icon: "House", label: "Dashboard" },
-  { icon: "Gamepad2", label: "My Games" },
-  { icon: "Zap", label: "Active Tests" },
-  { icon: "Archive", label: "Builds" },
-];
-
-const libraryNav: NavItem[] = [
-  { icon: "LayoutDashboard", label: "Reports" },
-  { icon: "Clock", label: "History" },
-  { icon: "Video", label: "Recordings" },
-  { icon: "Clock3", label: "Scheduled" },
-  { icon: "ThumbsUp", label: "Liked" },
-];
-
-const systemNav: NavItem[] = [
-  { icon: "Settings", label: "Settings" },
-  { icon: "Flag", label: "Report issue" },
-  { icon: "HelpCircle", label: "Help" },
+const menu: NavItem[] = [
+  { icon: "Home", label: "Главная" },
+  { icon: "Search", label: "Поиск" },
+  {
+    icon: "MessageSquare",
+    label: "Отзывы",
+    children: [
+      { label: "Свежие отзывы" },
+      { label: "Топ за месяц" },
+      { label: "Мои отзывы" },
+    ],
+  },
+  {
+    icon: "Bookmark",
+    label: "Новости",
+    children: [
+      { label: "Главное" },
+      { label: "Анонсы" },
+      { label: "Обновления" },
+    ],
+  },
+  { icon: "Compass", label: "Гайды" },
+  { icon: "Map", label: "Интерактивные карты" },
+  { icon: "ListMusic", label: "Плейлист" },
+  {
+    icon: "Monitor",
+    label: "Обзор",
+    children: [
+      { label: "Тренды" },
+      { label: "Подборки" },
+      { label: "Рекомендации" },
+    ],
+  },
+  { icon: "ShoppingBag", label: "Магазин" },
+  { icon: "Sparkles", label: "Награды" },
+  {
+    icon: "PlayCircle",
+    label: "Видео",
+    children: [
+      { label: "Прохождения" },
+      { label: "Трейлеры" },
+      { label: "Стримы" },
+    ],
+  },
+  { icon: "Shield", label: "Политика конфиденциальности" },
+  { icon: "Scale", label: "Условия использования" },
+  {
+    icon: "MoreHorizontal",
+    label: "Ещё",
+    children: [
+      { label: "О проекте" },
+      { label: "Связаться с нами" },
+      { label: "Поддержка" },
+    ],
+  },
 ];
 
 type Theme = "light" | "dark" | "system";
@@ -68,11 +105,13 @@ interface SidebarProps {
   onItemClick?: (label: string) => void;
 }
 
-const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
+const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) => {
   const [expanded, setExpanded] = useState(true);
   const [active, setActive] = useState(activeItem);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const themeRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme, systemIsDark } = useTheme();
 
   useEffect(() => {
@@ -90,30 +129,18 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
     onItemClick?.(label);
   };
 
-  const NavRow = ({ item }: { item: NavItem }) => (
-    <button
-      onClick={() => handleClick(item.label)}
-      className={`
-        w-full flex items-center gap-3 rounded-lg transition-all duration-150
-        ${expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"}
-        ${active === item.label
-          ? "bg-secondary text-foreground"
-          : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-        }
-      `}
-      title={!expanded ? item.label : undefined}
-    >
-      <Icon name={item.icon as "House"} size={18} className="shrink-0" />
-      {expanded && (
-        <span className="font-inter text-sm font-medium truncate">{item.label}</span>
-      )}
-    </button>
-  );
+  const toggleGroup = (label: string) => {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const themes: { value: Theme; icon: string; label: string }[] = [
-    { value: "light", icon: "Sun", label: "Light Mode" },
-    { value: "dark", icon: "Moon", label: "Dark Mode" },
-    { value: "system", icon: "Monitor", label: "System" },
+    { value: "light", icon: "Sun", label: "Светлая тема" },
+    { value: "dark", icon: "Moon", label: "Тёмная тема" },
+    { value: "system", icon: "Monitor", label: "Системная" },
   ];
 
   const currentTheme = themes.find((t) => t.value === theme)!;
@@ -123,7 +150,7 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
       className={`
         relative flex flex-col h-screen border-r border-border bg-card
         transition-all duration-300 ease-in-out shrink-0
-        ${expanded ? "w-56" : "w-[56px]"}
+        ${expanded ? "w-64" : "w-[60px]"}
       `}
     >
       {/* HEADER */}
@@ -136,29 +163,101 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
         <button
           onClick={() => setExpanded(!expanded)}
           className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
-          title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+          title={expanded ? "Свернуть панель" : "Развернуть панель"}
         >
           <Icon name={expanded ? "PanelLeftClose" : "PanelLeftOpen"} size={16} />
         </button>
       </div>
 
       {/* NAV */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2 flex flex-col gap-0.5">
-        {mainNav.map((item) => (
-          <NavRow key={item.label} item={item} />
-        ))}
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 flex flex-col gap-0.5"
+      >
+        {menu.map((item) => {
+          const isActive = active === item.label;
+          const hasChildren = !!item.children?.length;
+          const isOpen = openGroups[item.label];
 
-        <div className="my-2 border-t border-border" />
+          return (
+            <div key={item.label}>
+              <button
+                onClick={() => {
+                  if (hasChildren && expanded) {
+                    toggleGroup(item.label);
+                  } else {
+                    handleClick(item.label);
+                  }
+                }}
+                title={!expanded ? item.label : undefined}
+                className={`
+                  w-full flex items-center gap-3 rounded-lg transition-all duration-150
+                  ${expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"}
+                  ${isActive
+                    ? "bg-secondary text-foreground"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                  }
+                `}
+              >
+                <Icon name={item.icon as "Home"} size={18} className="shrink-0" />
+                {expanded && (
+                  <>
+                    <span className="font-inter text-sm font-medium truncate flex-1 text-left">
+                      {item.label}
+                    </span>
+                    {hasChildren && (
+                      <Icon
+                        name="ChevronRight"
+                        size={15}
+                        className={`shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`}
+                      />
+                    )}
+                  </>
+                )}
+              </button>
 
-        {libraryNav.map((item) => (
-          <NavRow key={item.label} item={item} />
-        ))}
+              {/* SUBMENU */}
+              {expanded && hasChildren && isOpen && (
+                <div className="ml-5 mt-0.5 mb-1 pl-3 border-l border-border flex flex-col gap-0.5">
+                  {item.children!.map((sub) => (
+                    <button
+                      key={sub.label}
+                      onClick={() => handleClick(sub.label)}
+                      className={`
+                        w-full text-left px-3 py-2 rounded-md font-inter text-sm transition-colors
+                        ${active === sub.label
+                          ? "bg-secondary/70 text-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
+                        }
+                      `}
+                    >
+                      {sub.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
-        <div className="my-2 border-t border-border" />
-
-        {systemNav.map((item) => (
-          <NavRow key={item.label} item={item} />
-        ))}
+        {/* BACK TO TOP */}
+        <div className="mt-3 pt-3 border-t border-border">
+          <button
+            onClick={scrollToTop}
+            title="Наверх"
+            className={`
+              w-full flex items-center justify-center gap-2 rounded-lg
+              border border-border bg-secondary/40 hover:bg-secondary
+              transition-colors
+              ${expanded ? "py-2.5 px-3" : "py-2.5"}
+            `}
+          >
+            <Icon name="ArrowUp" size={15} className="shrink-0" />
+            {expanded && (
+              <span className="font-inter text-sm font-semibold">Наверх</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* THEME SWITCHER */}
@@ -184,13 +283,7 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
         </button>
 
         {themeMenuOpen && (
-          <div
-            className={`
-              absolute bottom-2 z-50 min-w-[200px] py-1.5
-              bg-popover text-popover-foreground border border-border rounded-lg shadow-lg
-              ${expanded ? "left-[calc(100%+8px)]" : "left-[calc(100%+8px)]"}
-            `}
-          >
+          <div className="absolute bottom-2 left-[calc(100%+8px)] z-50 min-w-[220px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg">
             {themes.map(({ value, icon, label }) => {
               const isActive = theme === value;
               const showSystemHint = value === "system";
@@ -208,7 +301,7 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
                     {label}
                     {showSystemHint && (
                       <span className="text-muted-foreground font-normal ml-1.5">
-                        ({systemIsDark ? "Dark" : "Light"})
+                        ({systemIsDark ? "тёмная" : "светлая"})
                       </span>
                     )}
                   </span>
@@ -230,8 +323,8 @@ const Sidebar = ({ activeItem = "Dashboard", onItemClick }: SidebarProps) => {
         {expanded && (
           <>
             <div className="flex-1 min-w-0">
-              <p className="font-inter text-sm font-medium truncate">My Account</p>
-              <p className="font-inter text-xs text-muted-foreground truncate">Free plan</p>
+              <p className="font-inter text-sm font-medium truncate">Мой аккаунт</p>
+              <p className="font-inter text-xs text-muted-foreground truncate">Бесплатный план</p>
             </div>
             <button className="text-muted-foreground hover:text-foreground transition-colors shrink-0">
               <Icon name="MoreHorizontal" size={16} />
