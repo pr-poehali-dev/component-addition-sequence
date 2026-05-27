@@ -12,20 +12,31 @@ const menu: NavItem[] = [
   { icon: "Search", label: "Поиск" },
   {
     icon: "MessageSquare",
-    label: "Отзывы",
+    label: "Обзоры",
     children: [
-      { label: "Свежие отзывы" },
-      { label: "Топ за месяц" },
-      { label: "Мои отзывы" },
+      { label: "Все обзоры" },
+      { label: "Выбор редакции" },
+      { label: "Обзоры игр" },
+      { label: "Обзоры фильмов" },
+      { label: "Обзоры сериалов" },
+      { label: "Обзоры техники" },
     ],
   },
   {
     icon: "Bookmark",
     label: "Новости",
     children: [
-      { label: "Главное" },
-      { label: "Анонсы" },
-      { label: "Обновления" },
+      { label: "Все новости" },
+      { label: "Колонки" },
+      { label: "PlayStation" },
+      { label: "Xbox" },
+      { label: "Nintendo" },
+      { label: "PC" },
+      { label: "Мобильные" },
+      { label: "Фильмы" },
+      { label: "Сериалы" },
+      { label: "Комиксы" },
+      { label: "Техника" },
     ],
   },
   { icon: "Compass", label: "Гайды" },
@@ -33,11 +44,23 @@ const menu: NavItem[] = [
   { icon: "ListMusic", label: "Плейлист" },
   {
     icon: "Monitor",
-    label: "Обзор",
+    label: "Открытия",
     children: [
-      { label: "Тренды" },
-      { label: "Подборки" },
-      { label: "Рекомендации" },
+      { label: "IGN Live Билеты" },
+      { label: "METRO 2039" },
+      { label: "Гайд по миру NTE" },
+      { label: "World of Warcraft: Midnight Hub" },
+      { label: "Planet Pokemon" },
+      { label: "Гайд по миру Перси Джексона" },
+      { label: "Скоро выйдут: Игры" },
+      { label: "Скоро выйдут: Фильмы" },
+      { label: "Скоро выйдут: Сериалы" },
+      { label: "Предзаказы" },
+      { label: "Kingdom Come Deliverance II" },
+      { label: "Трейлеры игр" },
+      { label: "Трейлеры фильмов" },
+      { label: "Трейлеры сериалов" },
+      { label: "Лучшая техника для гейминга" },
     ],
   },
   { icon: "ShoppingBag", label: "Магазин" },
@@ -46,9 +69,11 @@ const menu: NavItem[] = [
     icon: "PlayCircle",
     label: "Видео",
     children: [
-      { label: "Прохождения" },
+      { label: "Оригинальные шоу" },
+      { label: "Популярное" },
       { label: "Трейлеры" },
-      { label: "Стримы" },
+      { label: "Геймплей" },
+      { label: "Все видео" },
     ],
   },
   { icon: "Shield", label: "Политика конфиденциальности" },
@@ -355,14 +380,14 @@ const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) =
         return (
           <div
             ref={popoverRef}
-            style={{ top: popoverTop, left: sidebarWidth + 8 }}
-            className="fixed z-50 min-w-[220px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl animate-fade-in"
+            style={{ top: popoverTop, left: sidebarWidth + 8, maxHeight: "80vh" }}
+            className="fixed z-50 min-w-[240px] flex flex-col bg-popover text-popover-foreground border border-border rounded-lg shadow-xl animate-fade-in"
           >
-            <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+            <div className="px-3 py-2 border-b border-border flex items-center gap-2 shrink-0">
               <Icon name={item.icon as "Home"} size={15} className="text-muted-foreground" />
               <span className="font-syne text-sm font-semibold">{item.label}</span>
             </div>
-            <div className="py-1">
+            <div className="py-1 overflow-y-auto">
               {item.children.map((sub) => (
                 <button
                   key={sub.label}
