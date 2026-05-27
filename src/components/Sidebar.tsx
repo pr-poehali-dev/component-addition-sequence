@@ -80,6 +80,17 @@ const projectIconColors: Record<string, string> = {
   "Tuesday™": "text-violet-400",
 };
 
+const collapsedIcons = [
+  { icon: "Home", label: "Home" },
+  { icon: "Search", label: "Search" },
+  { icon: "Bell", label: "Updates" },
+  { icon: "Inbox", label: "Inbox" },
+  { icon: "MessageCircle", label: "Chat" },
+  { icon: "ClipboardList", label: "My tasks" },
+  { icon: "Users", label: "Teams" },
+  { icon: "Layers", label: "Projects" },
+];
+
 type Theme = "light" | "dark" | "system";
 
 const useTheme = () => {
@@ -129,17 +140,19 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
     return stored === null ? true : stored === "true";
   });
+  const [hoverOpen, setHoverOpen] = useState(false);
   const [active, setActive] = useState(activeItem);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     workspace: true,
     projects: true,
   });
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({
+    "Tuesday™": true,
     "Create™ AI": true,
-    "Consumex™": true,
   });
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const themeRef = useRef<HTMLDivElement>(null);
+  const hoverTimer = useRef<number | null>(null);
   const { theme, setTheme, systemIsDark } = useTheme();
 
   useEffect(() => {
@@ -167,6 +180,18 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
 
   const toggleItem = (label: string) => {
     setOpenItems((prev) => ({ ...prev, [label]: !prev[label] }));
+  };
+
+  const openHover = () => {
+    if (hoverTimer.current) {
+      window.clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+    setHoverOpen(true);
+  };
+  const closeHoverWithDelay = () => {
+    if (hoverTimer.current) window.clearTimeout(hoverTimer.current);
+    hoverTimer.current = window.setTimeout(() => setHoverOpen(false), 150);
   };
 
   const themes: { value: Theme; icon: string; label: string }[] = [
@@ -197,82 +222,86 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
     return null;
   };
 
-  // ===== COLLAPSED VIEW (узкая полоса иконок) =====
-  if (!expanded) {
-    const collapsedIcons = [
-      { icon: "Home", label: "Home" },
-      { icon: "Search", label: "Search" },
-      { icon: "Bell", label: "Updates" },
-      { icon: "Inbox", label: "Inbox" },
-      { icon: "MessageCircle", label: "Chat" },
-      { icon: "ClipboardList", label: "My tasks" },
-      { icon: "Users", label: "Teams" },
-      { icon: "Layers", label: "Projects" },
-    ];
+  // ===== Узкая полоса иконок (всегда видна, когда expanded === false) =====
+  const collapsedRail = (
+    <aside
+      onMouseEnter={openHover}
+      onMouseLeave={closeHoverWithDelay}
+      className="relative flex flex-col h-screen border-r border-border bg-card w-[52px] shrink-0"
+    >
+      <div className="flex items-center justify-center h-14 shrink-0">
+        <button
+          onClick={() => {
+            setHoverOpen(false);
+            setExpanded(true);
+          }}
+          className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-secondary rounded-md transition-colors"
+          title="Развернуть"
+        >
+          <Icon name="Layers" size={18} />
+        </button>
+      </div>
 
-    return (
-      <aside className="relative flex flex-col h-screen border-r border-border bg-card w-[52px] shrink-0 transition-all duration-300 ease-in-out">
-        <div className="flex items-center justify-center h-14 shrink-0">
-          <button
-            onClick={() => setExpanded(true)}
-            className="w-8 h-8 flex items-center justify-center text-foreground hover:bg-secondary rounded-md transition-colors"
-            title="Развернуть"
-          >
-            <Icon name="Layers" size={18} />
-          </button>
-        </div>
+      <div className="flex-1 flex flex-col items-center gap-1 px-1 pt-2 overflow-y-auto">
+        {collapsedIcons.map((it) => {
+          const isActive = active === it.label;
+          return (
+            <button
+              key={it.label}
+              onClick={() => handleClick(it.label)}
+              title={it.label}
+              className={`
+                w-9 h-9 flex items-center justify-center rounded-md transition-colors
+                ${isActive
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                }
+              `}
+            >
+              <Icon name={it.icon as "Home"} size={17} />
+            </button>
+          );
+        })}
+      </div>
 
-        <div className="flex-1 flex flex-col items-center gap-1 px-1 pt-2 overflow-y-auto">
-          {collapsedIcons.map((it) => {
-            const isActive = active === it.label;
-            return (
-              <button
-                key={it.label}
-                onClick={() => handleClick(it.label)}
-                title={it.label}
-                className={`
-                  w-9 h-9 flex items-center justify-center rounded-md transition-colors
-                  ${isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                  }
-                `}
-              >
-                <Icon name={it.icon as "Home"} size={17} />
-              </button>
-            );
-          })}
-        </div>
+      <div className="flex flex-col items-center gap-1 px-1 py-3 shrink-0">
+        <button
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          title={currentTheme.label}
+          className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+        >
+          <Icon name={currentTheme.icon as "Sun"} size={17} />
+        </button>
+        <button
+          className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          title="Аккаунт"
+        >
+          <Icon name="User" size={17} />
+        </button>
+        <button
+          className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+          title="Настройки"
+        >
+          <Icon name="SlidersHorizontal" size={17} />
+        </button>
+        <div className="w-7 h-7 rounded-md bg-gradient-to-br from-pink-400 via-yellow-300 to-cyan-300 mt-1" />
+      </div>
+    </aside>
+  );
 
-        <div className="flex flex-col items-center gap-1 px-1 py-3 shrink-0">
-          <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            title={currentTheme.label}
-            className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-          >
-            <Icon name={currentTheme.icon as "Sun"} size={17} />
-          </button>
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-            title="Аккаунт"
-          >
-            <Icon name="User" size={17} />
-          </button>
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-            title="Настройки"
-          >
-            <Icon name="SlidersHorizontal" size={17} />
-          </button>
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-pink-400 via-yellow-300 to-cyan-300 mt-1" />
-        </div>
-      </aside>
-    );
-  }
-
-  // ===== EXPANDED VIEW =====
-  return (
-    <aside className="relative flex flex-col h-screen border-r border-border bg-card w-64 shrink-0 transition-all duration-300 ease-in-out">
+  // ===== Развёрнутая панель (используется и как inline, и как overlay) =====
+  const renderPanel = (variant: "inline" | "overlay") => (
+    <div
+      className={`
+        flex flex-col h-screen bg-card w-64 shrink-0
+        ${variant === "inline"
+          ? "border-r border-border"
+          : "fixed top-0 left-[52px] z-50 border border-border rounded-r-xl shadow-2xl animate-fade-in"
+        }
+      `}
+      onMouseEnter={variant === "overlay" ? openHover : undefined}
+      onMouseLeave={variant === "overlay" ? closeHoverWithDelay : undefined}
+    >
       {/* HEADER */}
       <div className="flex items-center h-14 px-3 gap-2 shrink-0">
         <div className="w-6 h-6 rounded-md bg-gradient-to-br from-pink-400 via-yellow-300 to-cyan-300 shrink-0" />
@@ -281,11 +310,18 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
           <Icon name="ChevronDown" size={13} className="text-muted-foreground shrink-0" />
         </button>
         <button
-          onClick={() => setExpanded(false)}
+          onClick={() => {
+            if (variant === "overlay") {
+              setHoverOpen(false);
+              setExpanded(true);
+            } else {
+              setExpanded(false);
+            }
+          }}
           className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors shrink-0"
-          title="Свернуть"
+          title={variant === "overlay" ? "Закрепить" : "Свернуть"}
         >
-          <Icon name="PanelLeftClose" size={15} />
+          <Icon name={variant === "overlay" ? "PanelLeftOpen" : "PanelLeftClose"} size={15} />
         </button>
       </div>
 
@@ -300,7 +336,6 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
 
       {/* NAV */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden px-2 pb-3">
-        {/* MAIN ITEMS */}
         <div className="flex flex-col gap-0.5 pb-2">
           {mainItems.map((item) => {
             const isActive = active === item.label;
@@ -325,12 +360,11 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
           })}
         </div>
 
-        {/* SECTIONS */}
         {sections.map((section) => {
           const isOpen = openSections[section.key];
           return (
             <div key={section.key} className="pt-3 mt-1 border-t border-border">
-              <div className="flex items-center gap-1.5 px-2 py-1 mb-0.5 group">
+              <div className="flex items-center gap-1.5 px-2 py-1 mb-0.5">
                 <button
                   onClick={() => toggleSection(section.key)}
                   className="flex items-center gap-1.5 flex-1 text-left"
@@ -436,65 +470,99 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
         })}
       </div>
 
-      {/* BOTTOM: theme, user, settings */}
-      <div className="shrink-0 border-t border-border px-2 py-2 relative" ref={themeRef}>
-        <div className="flex items-center justify-between gap-1">
-          <button
-            onClick={() => setThemeMenuOpen((v) => !v)}
-            title={currentTheme.label}
-            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-          >
-            <Icon name={currentTheme.icon as "Sun"} size={16} />
-          </button>
-          <button
-            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-            title="Аккаунт"
-          >
-            <Icon name="User" size={16} />
-          </button>
-          <button
-            className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-            title="Настройки"
-          >
-            <Icon name="SlidersHorizontal" size={16} />
-          </button>
-          <div className="flex-1" />
-          <div className="w-7 h-7 rounded-md bg-gradient-to-br from-pink-400 via-yellow-300 to-cyan-300" />
-        </div>
-
-        {themeMenuOpen && (
-          <div className="absolute bottom-12 left-2 z-50 min-w-[220px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg">
-            {themes.map(({ value, icon, label }) => {
-              const isActive = theme === value;
-              const showSystemHint = value === "system";
-              return (
-                <button
-                  key={value}
-                  onClick={() => {
-                    setTheme(value);
-                    setThemeMenuOpen(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary/70 transition-colors text-left"
-                >
-                  <Icon name={icon as "Sun"} size={16} className="shrink-0 text-muted-foreground" />
-                  <span className="font-inter text-sm font-medium flex-1">
-                    {label}
-                    {showSystemHint && (
-                      <span className="text-muted-foreground font-normal ml-1.5">
-                        ({systemIsDark ? "тёмная" : "светлая"})
-                      </span>
-                    )}
-                  </span>
-                  {isActive && (
-                    <Icon name="Check" size={15} className="text-primary shrink-0" />
-                  )}
-                </button>
-              );
-            })}
+      {/* В overlay показываем превью и Upgrade Plan как на референсе */}
+      {variant === "overlay" && (
+        <div className="px-3 pb-3 shrink-0 flex flex-col gap-2">
+          <div className="relative w-full h-24 rounded-md overflow-hidden border border-border bg-gradient-to-br from-secondary to-secondary/50">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-9 h-9 rounded-full bg-background/80 backdrop-blur flex items-center justify-center">
+                <Icon name="Play" size={14} className="text-foreground translate-x-0.5" />
+              </div>
+            </div>
+            <div className="absolute top-2 left-2 right-2 flex flex-col gap-1 opacity-40">
+              <div className="h-1 w-1/2 rounded bg-foreground/60" />
+              <div className="h-1 w-1/3 rounded bg-foreground/40" />
+            </div>
           </div>
-        )}
-      </div>
-    </aside>
+          <button className="w-full flex items-center justify-center gap-2 bg-foreground text-background font-inter text-sm font-semibold rounded-md py-2.5 hover:opacity-90 transition-opacity">
+            <Icon name="ArrowUpCircle" size={15} />
+            Upgrade Plan
+          </button>
+        </div>
+      )}
+
+      {/* Низ панели в inline-режиме */}
+      {variant === "inline" && (
+        <div className="shrink-0 border-t border-border px-2 py-2 relative" ref={themeRef}>
+          <div className="flex items-center justify-between gap-1">
+            <button
+              onClick={() => setThemeMenuOpen((v) => !v)}
+              title={currentTheme.label}
+              className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            >
+              <Icon name={currentTheme.icon as "Sun"} size={16} />
+            </button>
+            <button
+              className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              title="Аккаунт"
+            >
+              <Icon name="User" size={16} />
+            </button>
+            <button
+              className="w-8 h-8 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              title="Настройки"
+            >
+              <Icon name="SlidersHorizontal" size={16} />
+            </button>
+            <div className="flex-1" />
+            <div className="w-7 h-7 rounded-md bg-gradient-to-br from-pink-400 via-yellow-300 to-cyan-300" />
+          </div>
+
+          {themeMenuOpen && (
+            <div className="absolute bottom-12 left-2 z-50 min-w-[220px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-lg">
+              {themes.map(({ value, icon, label }) => {
+                const isActive = theme === value;
+                const showSystemHint = value === "system";
+                return (
+                  <button
+                    key={value}
+                    onClick={() => {
+                      setTheme(value);
+                      setThemeMenuOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 hover:bg-secondary/70 transition-colors text-left"
+                  >
+                    <Icon name={icon as "Sun"} size={16} className="shrink-0 text-muted-foreground" />
+                    <span className="font-inter text-sm font-medium flex-1">
+                      {label}
+                      {showSystemHint && (
+                        <span className="text-muted-foreground font-normal ml-1.5">
+                          ({systemIsDark ? "тёмная" : "светлая"})
+                        </span>
+                      )}
+                    </span>
+                    {isActive && (
+                      <Icon name="Check" size={15} className="text-primary shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  if (expanded) {
+    return renderPanel("inline");
+  }
+
+  return (
+    <>
+      {collapsedRail}
+      {hoverOpen && renderPanel("overlay")}
+    </>
   );
 };
 
