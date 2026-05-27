@@ -9,6 +9,7 @@ interface NavItem {
 
 const menu: NavItem[] = [
   { icon: "Home", label: "Главная" },
+  { icon: "Gamepad2", label: "Игровой компас" },
   {
     icon: "MessageSquare",
     label: "Обзоры",
