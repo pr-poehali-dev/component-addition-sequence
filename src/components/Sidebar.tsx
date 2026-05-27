@@ -9,7 +9,6 @@ interface NavItem {
 
 const menu: NavItem[] = [
   { icon: "Home", label: "Главная" },
-  { icon: "Search", label: "Поиск" },
   {
     icon: "MessageSquare",
     label: "Обзоры",
@@ -64,7 +63,6 @@ const menu: NavItem[] = [
     ],
   },
   { icon: "ShoppingBag", label: "Магазин" },
-  { icon: "Sparkles", label: "Награды" },
   {
     icon: "PlayCircle",
     label: "Видео",
@@ -76,8 +74,11 @@ const menu: NavItem[] = [
       { label: "Все видео" },
     ],
   },
-  { icon: "Shield", label: "Политика конфиденциальности" },
-  { icon: "Scale", label: "Условия использования" },
+];
+
+const topBarItems: NavItem[] = [
+  { icon: "Search", label: "Поиск" },
+  { icon: "Sparkles", label: "Награды" },
   {
     icon: "MoreHorizontal",
     label: "Ещё",
@@ -85,6 +86,8 @@ const menu: NavItem[] = [
       { label: "О проекте" },
       { label: "Связаться с нами" },
       { label: "Поддержка" },
+      { label: "Политика конфиденциальности" },
+      { label: "Условия использования" },
     ],
   },
 ];

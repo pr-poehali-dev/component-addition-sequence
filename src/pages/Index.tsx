@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Sidebar from "@/components/Sidebar";
+import TopBar from "@/components/TopBar";
 import Icon from "@/components/ui/icon";
 
 const HomePage = () => (
@@ -89,6 +90,8 @@ const Index = () => {
           {content}
         </div>
       </main>
+
+      <TopBar onItemClick={setActivePage} />
     </div>
   );
 };
