@@ -8,7 +8,6 @@ interface TopBarItem {
 }
 
 const items: TopBarItem[] = [
-  { icon: "Search", label: "Поиск" },
   { icon: "Sparkles", label: "Награды" },
   {
     icon: "MoreHorizontal",
@@ -29,17 +28,27 @@ interface TopBarProps {
 
 const TopBar = ({ onItemClick }: TopBarProps) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setOpenMenu(null);
+        if (!searchValue) setSearchOpen(false);
       }
     };
-    if (openMenu) document.addEventListener("mousedown", handler);
+    document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, [openMenu]);
+  }, [searchValue]);
+
+  useEffect(() => {
+    if (searchOpen) {
+      inputRef.current?.focus();
+    }
+  }, [searchOpen]);
 
   const handleClick = (item: TopBarItem) => {
     if (item.children?.length) {
@@ -50,11 +59,44 @@ const TopBar = ({ onItemClick }: TopBarProps) => {
     }
   };
 
+  const toggleSearch = () => {
+    setOpenMenu(null);
+    setSearchOpen((prev) => {
+      if (prev) setSearchValue("");
+      return !prev;
+    });
+  };
+
   return (
     <div
       ref={wrapperRef}
       className="fixed top-4 right-4 z-40 flex items-center gap-1 px-2 py-1.5 bg-card border border-border rounded-full"
     >
+      <div className="flex items-center">
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          placeholder="Поиск..."
+          className={`
+            bg-transparent outline-none font-inter text-sm text-foreground placeholder:text-muted-foreground
+            transition-[width,padding,opacity] duration-300 ease-out
+            ${searchOpen ? "w-56 opacity-100 px-3" : "w-0 opacity-0 px-0"}
+          `}
+        />
+        <button
+          onClick={toggleSearch}
+          title="Поиск"
+          className={`
+            w-9 h-9 flex items-center justify-center rounded-full shrink-0
+            ${searchOpen ? "bg-secondary text-foreground" : "text-muted-foreground"}
+          `}
+        >
+          <Icon name={searchOpen ? "X" : "Search"} size={17} />
+        </button>
+      </div>
+
       {items.map((item) => {
         const isOpen = openMenu === item.label;
         return (
