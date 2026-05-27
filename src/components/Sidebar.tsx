@@ -108,10 +108,12 @@ interface SidebarProps {
 const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) => {
   const [expanded, setExpanded] = useState(true);
   const [active, setActive] = useState(activeItem);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openPopover, setOpenPopover] = useState<string | null>(null);
+  const [popoverTop, setPopoverTop] = useState<number>(0);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const themeRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme, systemIsDark } = useTheme();
 
   useEffect(() => {
@@ -124,13 +126,36 @@ const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) =
     return () => document.removeEventListener("mousedown", handler);
   }, [themeMenuOpen]);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (popoverRef.current && !popoverRef.current.contains(target)) {
+        const trigger = (target as HTMLElement).closest("[data-popover-trigger]");
+        if (!trigger) setOpenPopover(null);
+      }
+    };
+    if (openPopover) document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openPopover]);
+
+  useEffect(() => {
+    const onScroll = () => setOpenPopover(null);
+    const el = scrollRef.current;
+    el?.addEventListener("scroll", onScroll);
+    return () => el?.removeEventListener("scroll", onScroll);
+  }, []);
+
   const handleClick = (label: string) => {
     setActive(label);
     onItemClick?.(label);
+    setOpenPopover(null);
   };
 
-  const toggleGroup = (label: string) => {
-    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  const togglePopover = (label: string, e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.closest("[data-nav-row]")?.getBoundingClientRect();
+    if (rect) setPopoverTop(rect.top);
+    setOpenPopover((prev) => (prev === label ? null : label));
   };
 
   const scrollToTop = () => {
@@ -177,64 +202,53 @@ const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) =
         {menu.map((item) => {
           const isActive = active === item.label;
           const hasChildren = !!item.children?.length;
-          const isOpen = openGroups[item.label];
 
           return (
-            <div key={item.label}>
+            <div
+              key={item.label}
+              data-nav-row
+              className={`
+                w-full flex items-center gap-3 rounded-lg transition-all duration-150
+                ${expanded ? "pr-1" : ""}
+                ${isActive
+                  ? "bg-secondary text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                }
+              `}
+            >
               <button
-                onClick={() => {
-                  if (hasChildren && expanded) {
-                    toggleGroup(item.label);
-                  } else {
-                    handleClick(item.label);
-                  }
-                }}
+                onClick={() => handleClick(item.label)}
                 title={!expanded ? item.label : undefined}
                 className={`
-                  w-full flex items-center gap-3 rounded-lg transition-all duration-150
-                  ${expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center"}
-                  ${isActive
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
-                  }
+                  flex items-center gap-3 flex-1 min-w-0
+                  ${expanded ? "px-3 py-2.5" : "px-0 py-2.5 justify-center w-full"}
                 `}
               >
                 <Icon name={item.icon as "Home"} size={18} className="shrink-0" />
                 {expanded && (
-                  <>
-                    <span className="font-inter text-sm font-medium truncate flex-1 text-left">
-                      {item.label}
-                    </span>
-                    {hasChildren && (
-                      <Icon
-                        name="ChevronRight"
-                        size={15}
-                        className={`shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`}
-                      />
-                    )}
-                  </>
+                  <span className="font-inter text-sm font-medium truncate text-left">
+                    {item.label}
+                  </span>
                 )}
               </button>
 
-              {/* SUBMENU */}
-              {expanded && hasChildren && isOpen && (
-                <div className="ml-5 mt-0.5 mb-1 pl-3 border-l border-border flex flex-col gap-0.5">
-                  {item.children!.map((sub) => (
-                    <button
-                      key={sub.label}
-                      onClick={() => handleClick(sub.label)}
-                      className={`
-                        w-full text-left px-3 py-2 rounded-md font-inter text-sm transition-colors
-                        ${active === sub.label
-                          ? "bg-secondary/70 text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                        }
-                      `}
-                    >
-                      {sub.label}
-                    </button>
-                  ))}
-                </div>
+              {expanded && hasChildren && (
+                <button
+                  data-popover-trigger
+                  onClick={(e) => togglePopover(item.label, e)}
+                  className={`
+                    shrink-0 w-7 h-7 flex items-center justify-center rounded-md
+                    transition-colors hover:bg-secondary
+                    ${openPopover === item.label ? "bg-secondary text-foreground" : ""}
+                  `}
+                  title="Открыть подменю"
+                >
+                  <Icon
+                    name="ChevronRight"
+                    size={15}
+                    className={`transition-transform ${openPopover === item.label ? "translate-x-0.5" : ""}`}
+                  />
+                </button>
               )}
             </div>
           );
@@ -332,6 +346,42 @@ const Sidebar = ({ activeItem = "Главная", onItemClick }: SidebarProps) =
           </>
         )}
       </div>
+
+      {/* POPOVER (модальное окно подменю рядом с пунктом) */}
+      {openPopover && (() => {
+        const item = menu.find((m) => m.label === openPopover);
+        if (!item?.children) return null;
+        const sidebarWidth = expanded ? 256 : 60;
+        return (
+          <div
+            ref={popoverRef}
+            style={{ top: popoverTop, left: sidebarWidth + 8 }}
+            className="fixed z-50 min-w-[220px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl animate-fade-in"
+          >
+            <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+              <Icon name={item.icon as "Home"} size={15} className="text-muted-foreground" />
+              <span className="font-syne text-sm font-semibold">{item.label}</span>
+            </div>
+            <div className="py-1">
+              {item.children.map((sub) => (
+                <button
+                  key={sub.label}
+                  onClick={() => handleClick(sub.label)}
+                  className={`
+                    w-full text-left px-3 py-2 font-inter text-sm transition-colors
+                    ${active === sub.label
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
+                    }
+                  `}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
     </aside>
   );
 };
