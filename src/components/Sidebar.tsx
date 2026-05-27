@@ -296,7 +296,7 @@ const Sidebar = ({ activeItem = "Tasks", onItemClick }: SidebarProps) => {
         flex flex-col h-screen bg-card w-64 shrink-0
         ${variant === "inline"
           ? "border-r border-border"
-          : "fixed top-0 left-[52px] z-50 border border-border rounded-r-xl shadow-2xl animate-fade-in"
+          : "fixed top-0 left-[52px] z-40 border border-border rounded-r-xl shadow-2xl animate-slide-from-rail"
         }
       `}
       onMouseEnter={variant === "overlay" ? openHover : undefined}

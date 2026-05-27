@@ -89,11 +89,20 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'slide-from-rail': {
+					from: {
+						transform: 'translateX(-100%)'
+					},
+					to: {
+						transform: 'translateX(0)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'slide-from-rail': 'slide-from-rail 0.18s ease-out'
 			}
 		}
 	},
