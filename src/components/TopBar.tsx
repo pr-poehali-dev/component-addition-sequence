@@ -53,7 +53,7 @@ const TopBar = ({ onItemClick }: TopBarProps) => {
   return (
     <div
       ref={wrapperRef}
-      className="fixed top-4 right-4 z-40 flex items-center gap-1 px-2 py-1.5 bg-card/95 backdrop-blur border border-border rounded-full shadow-lg"
+      className="fixed top-4 right-4 z-40 flex items-center gap-1 px-2 py-1.5 bg-card border border-border rounded-full"
     >
       {items.map((item) => {
         const isOpen = openMenu === item.label;
@@ -63,18 +63,15 @@ const TopBar = ({ onItemClick }: TopBarProps) => {
               onClick={() => handleClick(item)}
               title={item.label}
               className={`
-                w-9 h-9 flex items-center justify-center rounded-full transition-colors
-                ${isOpen
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary/70"
-                }
+                w-9 h-9 flex items-center justify-center rounded-full
+                ${isOpen ? "bg-secondary text-foreground" : "text-muted-foreground"}
               `}
             >
               <Icon name={item.icon as "Search"} size={17} />
             </button>
 
             {isOpen && item.children && (
-              <div className="absolute top-[calc(100%+8px)] right-0 min-w-[240px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg shadow-xl animate-fade-in">
+              <div className="absolute top-[calc(100%+8px)] right-0 min-w-[240px] py-1.5 bg-popover text-popover-foreground border border-border rounded-lg">
                 <div className="px-3 py-2 border-b border-border flex items-center gap-2">
                   <Icon name={item.icon as "Search"} size={15} className="text-muted-foreground" />
                   <span className="font-syne text-sm font-semibold">{item.label}</span>
@@ -87,7 +84,7 @@ const TopBar = ({ onItemClick }: TopBarProps) => {
                         onItemClick?.(sub.label);
                         setOpenMenu(null);
                       }}
-                      className="w-full text-left px-3 py-2 font-inter text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
+                      className="w-full text-left px-3 py-2 font-inter text-sm text-muted-foreground"
                     >
                       {sub.label}
                     </button>
